@@ -16,18 +16,18 @@ export default (props) => {
     const [umidade, setUmidade] = useState(0);
 
     useEffect(async () => {
-        await atualizar();
+        await atualizar(true);
     }, []);
     
-    async function atualizar(atualizaProximo = true){
+    async function atualizar(atualizaProximo = false){
+
+        let temp, umid;
 
         const url = await AsyncStorage.getItem('url');
         const tempo = await AsyncStorage.getItem('tempo');
 
-        let temp, umid;
-
         //Configuração inicial
-        if(url == '' || tempo == '' || tempo == 0){
+        if(!url || !tempo || tempo == 0){
             setStatus('Configure o aplicativo!');
             return;
         }
@@ -55,7 +55,7 @@ export default (props) => {
 
         if(atualizaProximo){
             setTimeout(() => {
-                atualizar();
+                atualizar(true);
             }, tempo * 1000 * 60);
         }
     }
@@ -81,6 +81,7 @@ export default (props) => {
             <Text style={styles.status}>{status}</Text>
             
             <View style={exibirDados ? null : styles.displayNone}>
+                
                 <View>
                     <Text style={styles.subTitulo}>Temperatura</Text>
                     <Text style={styles.dado}>{temperatura} °C</Text>
@@ -90,6 +91,7 @@ export default (props) => {
                     <Text style={[styles.subTitulo, styles.espacamento]}>Umidade</Text>
                     <Text style={styles.dado}>{umidade} %</Text>
                 </View>
+
             </View>
 
             <TouchableHighlight style={styles.botaoAtualizar} onPress={() => atualizar(false)}>
