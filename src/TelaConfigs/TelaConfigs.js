@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { View, Text, Switch, TextInput, StyleSheet, TouchableHighlight } from 'react-native'
+import { Alert, View, Text, TextInput, StyleSheet, TouchableHighlight } from 'react-native'
 
 import Ionicons from 'react-native-vector-icons/Ionicons';
 import AsyncStorage from '@react-native-community/async-storage';
@@ -20,10 +20,24 @@ export default (props) => {
     }, []);
 
     async function salvar(){
+
+        //Validações URL
+        if(url.length < 10 || url.indexOf('http://') == -1){
+            Alert.alert('Preencha a URL');
+            return;
+        }
+
+        //Validações tempo
+        if(parseInt(tempo) < 1){
+            Alert.alert('Preencha o tempo');
+            return;
+        }
+
+        //Salvar
         await AsyncStorage.setItem('url', url);
         await AsyncStorage.setItem('tempo', tempo);
 
-        setStatus('As configurações foram salvadas com sucesso!');
+        setStatus('Configurações salvas com sucesso!');
 
         setTimeout(() => {
             setStatus('');
@@ -43,7 +57,7 @@ export default (props) => {
         
         <View style={[styles.containerUnit, styles.espacamento]}>
             <Text>Tempo de atualização em minutos</Text>
-            <TextInput style={styles.inputs} value={tempo} onChangeText={setTempo} keyboardType="numeric" />
+            <TextInput style={styles.inputs} value={tempo} onChangeText={(val) => setTempo(parseInt(val))} keyboardType="numeric" />
         </View>
 
         <TouchableHighlight style={styles.botaoSalvar} onPress={salvar}>
