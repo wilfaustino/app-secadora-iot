@@ -1,29 +1,81 @@
-import React from 'react';
-import { View, Text, StyleSheet, TouchableHighlight } from 'react-native'
+import React, { useState, useEffect } from 'react';
+import { Alert, View, Text, StyleSheet, TouchableHighlight } from 'react-native'
 
 import Ionicons from 'react-native-vector-icons/Ionicons';
+import AsyncStorage from '@react-native-community/async-storage';
+import Axios from 'axios';
 
 export default (props) => {
+    
+    const [status, setStatus] = useState('');
+    const [exibirDados, setExibirDados] = useState(false);
+    
+    const [temperatura, setTemperatura] = useState(0);
+    const [umidade, setUmidade] = useState(0);
+
+    useEffect(async () => {
+        await atualizar();
+    }, []);
+    
+    async function atualizar(){
+
+        const url = await AsyncStorage.getItem('url');
+        const tempo = await AsyncStorage.getItem('tempo');
+        
+        setStatus('Conectando-se a ' + url.replace('http://','') + '...');
+
+        //Consulta API
+        try {
+            const response = await Axios.get(url);
+
+            setTemperatura(response.data.temperatura);
+            setUmidade(response.data.umidade);
+        } catch (error) {
+            setExibirDados(false);
+            setStatus('Erro ao consultar dados.');
+            Alert.alert('Erro ao consultar dados: ' + error);
+        }
+
+        setExibirDados(true);
+
+        statusSecagem();
+
+        setTimeout(() => {
+            atualizar();
+        }, tempo * 1000 * 60);
+    }
+
+    function statusSecagem(){
+        if(temperatura < 40){
+            setStatus('Secadora desligada');
+        } else if(umidade < 11){
+            setStatus('Roupa seca!!');
+        } else {
+            setStatus('Secagem em andamento');
+        }
+    }
 
     return <View style={styles.container}>
         
         <Text style={styles.titulo}>Secadora IoT</Text>
 
-        <Text style={styles.status}>-</Text>
+        <Text style={styles.status}>{status}</Text>
         
         <View>
             
-            <View>
-                <Text style={styles.subTitulo}>Temperatura</Text>
-                <Text style={styles.dado}>50 °C</Text>
+            <View style={exibirDados ? null : styles.displayNone}>
+                <View>
+                    <Text style={styles.subTitulo}>Temperatura</Text>
+                    <Text style={styles.dado}>{temperatura} °C</Text>
+                </View>
+
+                <View>
+                    <Text style={[styles.subTitulo, styles.espacamento]}>Umidade</Text>
+                    <Text style={styles.dado}>{umidade} %</Text>
+                </View>
             </View>
 
-            <View>
-                <Text style={[styles.subTitulo, styles.espacamento]}>Umidade</Text>
-                <Text style={styles.dado}>50 %</Text>
-            </View>
-
-            <TouchableHighlight style={styles.botaoAtualizar}>
+            <TouchableHighlight style={styles.botaoAtualizar} onPress={atualizar}>
                 <View style={styles.botaoAtualizarView}>
                     <Ionicons name={'sync-outline'} size={19} color={'#888'} style={styles.botaoAtualizarIcon} />
                     <Text>Atualizar</Text>
@@ -44,6 +96,9 @@ const styles = StyleSheet.create({
         flex: 1,
         justifyContent: 'center'
     },
+    displayNone:{
+        display: 'none'
+    },
     titulo:{
         fontSize: 50,
         textAlign: 'center',
@@ -58,11 +113,11 @@ const styles = StyleSheet.create({
     subTitulo:{
         fontSize: 38,
         fontWeight: 'bold',
-        textAlign: 'center',
+        textAlign: 'center'
     },
     dado:{
         fontSize: 35,
-        textAlign: 'center',
+        textAlign: 'center'
     },
     espacamento:{
         marginTop: 25
